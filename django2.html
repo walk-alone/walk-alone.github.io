@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="">
+    <meta name="author" content="">
+
+    <title>django part2</title>
+
+    <!-- Bootstrap Core CSS -->
+    <link href="vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Theme CSS -->
+    <link href="css/clean-blog.min.css" rel="stylesheet">
+
+    <!-- Custom Fonts -->
+    <link href="vendor/font-awesome/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+    <link href='https://fonts.googleapis.com/css?family=Lora:400,700,400italic,700italic' rel='stylesheet' type='text/css'>
+    <link href='https://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800' rel='stylesheet' type='text/css'>
+
+    <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+        <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+        <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+    <![endif]-->
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-default navbar-custom navbar-fixed-top">
+        <div class="container-fluid">
+            <!-- Brand and toggle get grouped for better mobile display -->
+            <div class="navbar-header page-scroll">
+                <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1">
+                    <span class="sr-only">Toggle navigation</span>
+                    Menu <i class="fa fa-bars"></i>
+                </button>
+                <a class="navbar-brand" href="index.html">Such is life</a>
+            </div>
+
+            <!-- Collect the nav links, forms, and other content for toggling -->
+            <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+                <ul class="nav navbar-nav navbar-right">
+                    <li>
+                        <a href="index.html">Home</a>
+                    </li>
+                    <li>
+                        <a href="about.html">About</a>
+                    </li>
+                    <li>
+                        <a href="post.html">Sample Post</a>
+                    </li>
+                    <li>
+                        <a href="contact.html">Contact</a>
+                    </li>
+                </ul>
+            </div>
+            <!-- /.navbar-collapse -->
+        </div>
+        <!-- /.container -->
+    </nav>
+    <!-- Page Header -->
+    <!-- Set your background image for this header on the line below. -->
+    <header class="intro-header" style="background-image: url('img/post-bg.jpg')">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                    <div class="post-heading">
+                        <h1>Django Learn</h1>
+                        <h2 class="subheading">Part2</h2>
+                        <span class="meta">May 27, 2017</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Post Content -->
+    <article>
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                    <h2 class="section-heading">Django form、ModelForm、表单验证</h2>
+                    <h5>forms.py</h5>
+                    <pre>
+                        #coding:utf-8
+                        from django import forms
+                        from models import Info
+                        from django.core.exceptions import ValidationError
+
+
+                        def valide_name(value):
+                            try:
+                                Info.objects.get(name=value)
+                                print 'exexeexexeexe'
+                                raise ValidationError('key exist')
+                            except Info.DoesNotExist:
+                                pass
+                        class InfoForm(forms.Form):
+                            name = forms.CharField(max_length=100,label='姓名',error_messages={'required':'此项必填'})
+                            address = forms.CharField(max_length=100)
+                            city = forms.CharField(max_length=100)
+
+                        class InfoForm1(forms.ModelForm):
+                            #name = forms.CharField(label=u'名称',validators=[valide_name])
+                            def clean_name(self):
+                                try:
+                                    value = self.cleaned_data.get('name')
+                                    Info.objects.get(name=value)
+                                    print 'exexeexexeexe'
+                                    raise ValidationError('key exist')
+                                except Info.DoesNotExist:
+                                    pass
+                                return value
+
+                            def clean(self):
+                                cleandata = super(InfoForm1,self).clean()
+                                print cleandata
+                                value = cleandata['name']
+                                try:
+                                    Info.objects.get(name=value)
+                                    #self._errors['name'] = self.error_class(["%s的信息已存在" % value])
+                                    print 'exexeexexeexe'
+                                    raise ValidationError('key exist')
+                                except Info.DoesNotExist:
+                                    pass
+                                return cleandata
+
+
+                            class Meta:
+                                model = Info
+                                fields = ("name","city")
+                                # exclude = ("")
+
+                        #表单验证 3种
+                        '''
+                        1.表单字段验证器
+                        2.clean_filedname 验证字段，针对摸个字段验证 函数名必须叫clean_filedname，函数内部对后台数据做了提取验证，并返回自定义的错误信息。
+                        3.表单clean方法，针对整个表单
+                        '''
+                    </pre>
+
+                    <h5>views.py</h5>
+                    <pre>
+                        # -*- coding: utf-8 -*-
+                        from __future__ import unicode_literals
+
+                        from django.shortcuts import render
+
+                        from django.http import HttpResponse
+                        # Create your views here.
+                        from models import Info
+                        from forms import InfoForm,InfoForm1
+                        from django.shortcuts import render
+                        def index(request):
+                            return HttpResponse('hello world')
+
+                        #not use django form
+                        def insert01(request):
+                            print request.method
+                            if request.method == 'POST':
+                                name1 = request.POST['name']
+                                print name1
+                                address = request.POST['address']
+                                city = request.POST['city']
+
+                                info = Info.objects.create(name=name1,address=address,city=city)
+                                print info
+                                return HttpResponse('data saved')
+
+                            return render(request,'index.html',locals())
+
+                        #use django form
+                        def insert(request):
+                            if request.method == 'POST':
+                                # name1 = request.POST['name']
+                                # print name1
+                                # address = request.POST['address']
+                                # city = request.POST['city']
+                                #
+                                # info = Info.objects.create(name=name1, address=address, city=city)
+                                # print info
+                                # return HttpResponse('data saved')
+
+                        ####################################################################
+
+                                # Info_form = InfoForm(request.POST)
+                                # if Info_form.is_valid():
+                                #     Info.objects.create(
+                                #         name = Info_form.cleaned_data['name'],
+                                #         address = Info_form.cleaned_data['address'],
+                                #         city = Info_form.cleaned_data['city'],
+                                #     )
+                                #     return HttpResponse('django form data saved')
+                        ################################################################
+                                inForm = InfoForm1(request.POST)
+                                if inForm.is_valid():
+                                    inForm.save()
+                                    return HttpResponse('data saved')
+
+                            Info_form = InfoForm1()
+                            return render(request, 'index.html', locals())
+                    </pre>
+    
+                    <pre>
+                        
+                        &lt;form method='post'&gt;
+                        {% csrf_token %}
+                        {{ form }}
+                        &lt;input type="submit" value="提交"&gt;
+                        &lt;/form&gt;
+                    </pre>
+
+                    <h2 class="section-heading">Django 上下文渲染器</h2>
+                    <p>上下文渲染器 其实就是函数返回字典，字典的 keys 可以用在模板中</p>
+                    <pre>
+                        def ip_address(request):
+                            return {'ip_address': request.META['REMOTE_ADDR']}
+
+                        TEMPLATES = [
+                            {...
+                             ...
+                                'OPTIONS': {
+                                    'context_processors': [
+                                        'django.template.context_processors.debug',
+                                        'django.template.context_processors.request',
+                                        'django.contrib.auth.context_processors.auth',
+                                        'django.contrib.messages.context_processors.messages',
+                                        #新建一个 context_processor.py
+                                        'xxx.context_processor.settings',
+                                        'xxx.context_processor.ip_address',
+                                    ],
+                                },
+                            },
+                        ]
+                    </pre>
+                                    
+                    <h2 class="section-heading">Django 中间件</h2>
+                    <a href="#">
+                        <img class="img-responsive" src="img/django.png" alt="">
+                    </a>
+                    <p>每一个请求都是先通过中间件中的 process_request 函数，这个函数返回 None 或者 HttpResponse 对象，如果返回前者，继续处理其它中间件，如果返回一个 HttpResponse，就处理中止，返回到网页上</p>
+                    <pre>
+                        process_request
+                        process_response
+                        process_view
+                        process_exception
+                        process_template_response
+                    </pre>
+                    <p>方法1：</p>
+                    <pre>
+                        class MyMiddleware(object):
+                            def __init__(self, get_response):
+                                self.get_response = get_response
+                            def __call__(self, request):
+                                # 调用 view 之前的代码
+                                response = self.get_response(request)
+                                # 调用 view 之后的代码
+                                return response
+                    </pre>
+                    <p>__call__ 方法会先调用 self.process_request(request)，接着执行 self.get_response(request) 然后调用 self.process_response(request, response)</p>
+                    <p>方法2：</p>
+                    <pre>
+                        def mymiddleware(get_response):
+                            def middleware(request):
+                                print 'this is my middle ware....'
+                                response = get_response(request)
+                                print 'this is my middleware response....'
+                                return response
+                            return middleware
+                    </pre>
+
+
+            </div>
+        </div>
+    </article>
+    <hr>
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                    <ul class="list-inline text-center">
+                        <li>
+                            <a href="#">
+                                <span class="fa-stack fa-lg">
+                                    <i class="fa fa-circle fa-stack-2x"></i>
+                                    <i class="fa fa-twitter fa-stack-1x fa-inverse"></i>
+                                </span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#">
+                                <span class="fa-stack fa-lg">
+                                    <i class="fa fa-circle fa-stack-2x"></i>
+                                    <i class="fa fa-facebook fa-stack-1x fa-inverse"></i>
+                                </span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#">
+                                <span class="fa-stack fa-lg">
+                                    <i class="fa fa-circle fa-stack-2x"></i>
+                                    <i class="fa fa-github fa-stack-1x fa-inverse"></i>
+                                </span>
+                            </a>
+                        </li>
+                    </ul>
+                    <p class="copyright text-muted">Zhongze &copy; Such is life 2017</p>
+                </div>
+            </div>
+        </div>
+    </footer>
+    <!-- jQuery -->
+    <script src="vendor/jquery/jquery.min.js"></script>
+    <!-- Bootstrap Core JavaScript -->
+    <script src="vendor/bootstrap/js/bootstrap.min.js"></script>
+    <!-- Contact Form JavaScript -->
+    <script src="js/jqBootstrapValidation.js"></script>
+    <script src="js/contact_me.js"></script>
+    <!-- Theme JavaScript -->
+    <script src="js/clean-blog.min.js"></script>
+</body>
+
+</html>
