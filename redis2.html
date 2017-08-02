@@ -9,7 +9,7 @@
     <meta name="description" content="">
     <meta name="author" content="">
 
-    <title>Redis part1</title>
+    <title>redis part2</title>
 
     <!-- Bootstrap Core CSS -->
     <link href="vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
@@ -74,8 +74,8 @@
                 <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
                     <div class="post-heading">
                         <h1>Redis Learn</h1>
-                        <h2 class="subheading">Part1</h2>
-                        <span class="meta">July 2, 2017</span>
+                        <h2 class="subheading">Part2</h2>
+                        <span class="meta">July 24, 2017</span>
                     </div>
                 </div>
             </div>
@@ -87,201 +87,122 @@
         <div class="container">
             <div class="row">
                 <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
-                    <h2 class="section-heading">Redis 基础命令</h2>
-                    <p>安装：<br>
-                        下载源码包,解压,make,make install, 编译后的命令在/usr/local/bin</p>
-                    <p>集群的搭建；</p>
+                    <h2 class="section-heading">Django-redis</h2>
+                    <p>安装</p>
+                    <pre>pip install django-redis</pre>
+                    <p>配置cache backend </p>
                     <pre>
-安装好redis后，修改配置文件：
-port
-daemonize
-bind
-dir   data
-pidfile
-cluster-enabled
-cluster-config-file
-cluster-node-timeout
-                    </pre>
-                    <p>分别启动后，集群并没有启动，因为slot还没有初始化</p>
-                    <pre>
-安装ruby rubygems redis
-启动集群：
-    /usr/local/redis-cluster/bin/redis-trib.rb create --replicas 1 192.168.119.131:9001 \
-    192.168.119.131:9002 \
-    192.168.119.131:9003 \
-    192.168.119.131:9004 \
-    192.168.119.131:9005 \
-    192.168.119.131:9006
-                    </pre>
-                    <p>启动服务，连接服务</p>
-                    <pre>
-redis-server redis-conf
+CACHES = {
+    "default": {
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": "redis://127.0.0.1:6379/1",
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+            "PASSWORD": "mysecret"
+            #"SOCKET_CONNECT_TIMEOUT": 5,  # in seconds
+            #"SOCKET_TIMEOUT": 5,  # in seconds
+             #"COMPRESSOR": "django_redis.compressors.zlib.ZlibCompressor",
+        }
+    }
+}
+支持三种 URL scheme :
 
-redis-cli -h 127.0.0.1 -p 6379
-
-set mykey abc  创建
-DEL mykey   删除
-get mykey   获取
-
-CONFIG GET * 获取配置信息
-CONFIG SET loglevel "notice"
-Redis支持五种数据类型：string（字符串），hash（哈希），list（列表），set（集合）及zset(sorted set：有序集合)
-一个键最大能存储512MB。
-
+redis://: 普通的 TCP 套接字连接
+rediss://: SSL 包裹的 TCP 套接字连接
+unix://: Unix 域套接字连接
                     </pre>
 
+<p>session backend 使用配置</p>
+<pre>
+Django 默认可以使用任何 cache backend 作为 session backend, 将 django-redis 作为 session 储存后端不用安装任何额外的 backend,
+
+SESSION_ENGINE = "django.contrib.sessions.backends.cache"
+SESSION_CACHE_ALIAS = "default"
+</pre>
+
+                <h2 class="section-heading">redis client</h2>
+                <p>安装redis</p>
+                <pre>pip install redis</pre>
+                <p>简单的redis操作</p>
                 <pre>
-哈希
- HMSET user:1 username ziqiangxuetang.com password ziqiangxuetang.com points 200
-
-列表
-lpush ziqiangxuetang.com redis
-lrange ziqiangxuetang.com 0 10
-
-集合 Redis的Set是string类型的无序集合。 集合是通过哈希表实现的，所以添加，删除，查找的复杂度都是O(1)。
-sadd key member
-smembers key
-
-有序集合 zset
-Redis zset 和 set 一样也是string类型元素的集合,且不允许重复的成员。
-不同的是每个元素都会关联一个double类型的分数。redis正是通过分数来为集合中的成员进行从小到大的排序。
-zset的成员是唯一的,但分数(score)却可以重复。
-zadd ziqiangxuetang.com 0 rabitmq
-ZRANGEBYSCORE ziqiangxuetang.com 0 1000
-
-none (key不存在)
-string (字符串)
-list (列表)
-set (集合)
-zset (有序集)
-hash (哈希表)
+>>> import redis
+>>> r = redis.Redis(host='localhost',port=6379,db=0)
+>>> r.set('guo','shuai')
+True
+>>> r.get('guo')
+'shuai'
+>>> r['guo']            
+'shuai'
+>>> r.keys()
+['guo']
+>>> r.dbsize()         #当前数据库包含多少条数据       
+1L
+>>> r.delete('guo')
+1
+>>> r.save()               #执行“检查点”操作，将数据写回磁盘。保存时阻塞
+True
+>>> r.get('guo');
+>>> r.flushdb()        #清空r中的所有数据
+True
                 </pre>
-
-<p>key命令</p>
+                <p>pipeline操作</p>
+                <pre>
+>>> p = r.pipeline()        --创建一个管道
+>>> p.set('hello','redis')
+>>> p.sadd('faz','baz')
+>>> p.incr('num')
+>>> p.execute()
+[True, 1, 1]
+>>> r.get('hello')
+'redis'
+管道的命令可以写在一起
+>>> p.set('hello','redis').sadd('faz','baz').incr('num').execute()
+                </pre>
+<p>应用:页面点击数</p>
 <pre>
-    del
-    dump
-    exists
-    expire
-    expireat 
-    pexpire
-    pexpireat
-    keys *
-    move key db
-    persist key 
-    pttl key
-    ttl key
-    randomkey
-    renamenx key new key
-    type key
+ r.set("visit:1237:totals",34634)
+ 每当有一个页面点击，则使用INCR增加点击数即可
+ r.incr("visit:1237:totals")
+ 页面载入的时候则可直接获取这个值
+>>> r.get ("visit:1237:totals")
 </pre>
 
-<p>字符串命令</p>
+<p>使用hash类型保存多样化对象,
+当有大量类型文档的对象，文档的内容都不一样时，（即“表”没有固定的列），可以使用hash来表达。可以使用集合运算来得到几个圈子的共同成员</p>
+
+<p>应用场景 – 实时用户统计</p>
+<span>当我们需要在页面上显示当前的在线用户时，就可以使用Redis来完成了。首先获得当前时间（以Unix timestamps方式）除以60，可以基于这个值创建一个key。然后添加用户到这个集合中。当超过你设定的最大的超时时间，则将这个集合设为过期；而当需要查询当前在线用户的时候，则将最后N分钟的集合交集在一起即可。由于redis连接对象是线程安全的，所以可以直接使用一个全局变量来表示。</span>
 <pre>
-    getrange key start end
-    getset key value
-    mget 
-    mset
-    strlen key
+import time
+from redis import Redis
+from datetime import datetime
+ONLINE_LAST_MINUTES = 5
+redis = Redis()
+ 
+def mark_online(user_id):         #将一个用户标记为online
+    now = int(time.time())        #当前的UNIX时间戳
+    expires = now + (app.config['ONLINE_LAST_MINUTES'] * 60) + 10    #过期的UNIX时间戳
+    all_users_key = 'online-users/%d' % (now // 60)        #集合名，包含分钟信息
+    user_key = 'user-activity/%s' % user_id                
+    p = redis.pipeline()
+    p.sadd(all_users_key, user_id)                         #将用户id插入到包含分钟信息的集合中
+    p.set(user_key, now)                                   #记录用户的标记时间
+    p.expireat(all_users_key, expires)                     #设定集合的过期时间为UNIX的时间戳
+    p.expireat(user_key, expires)
+    p.execute()
+ 
+def get_user_last_activity(user_id):        #获得用户的最后活跃时间
+    last_active = redis.get('user-activity/%s' % user_id)  #如果获取不到，则返回None
+    if last_active is None:
+        return None
+    return datetime.utcfromtimestamp(int(last_active))
+ 
+def get_online_users():                     #获得当前online用户的列表
+    current = int(time.time()) // 60        
+    minutes = xrange(app.config['ONLINE_LAST_MINUTES'])
+    return redis.sunion(['online-users/%d' % (current - x)        #取ONLINE_LAST_MINUTES分钟对应集合的交集
+                         for x in minutes])
 </pre>
-
-<p>hash 命令</p>
-<pre>
-    hdel key field1 field2
-    hexists key field
-    hget key field
-    hgetall key
-    hkeys key
-    hlen key
-    hmget key field1 field2
-    hmset key field1 value1 field2 value2
-    hvals key
-    HSCAN key cursor [MATCH pattern] [COUNT count]   
-
-</pre>
-
-<p>list命令</p>
-<pre>
-    blpop key1 key2 timeout
-    brpop key1 key2 timeout
-    brpoplpush source dest timeout
-    lindex key index
-    linsert key defore|after pivot value
-    llen key
-    lpush key value
-    lpop key
-    lrange key start stop
-    lrem key count value
-    lset key index value
-    rpop key
-    rpush key value1 value2
-</pre>
-
-<p>集合命令</p>
-<pre>
-    sadd key member1 member2
-    scard key
-    sinter key1 key2 交集
-    sunion key1 key2 并集
-    sdiff key1 key2  差集
-    sysmember key member
-    smembers key
-    spop key
-    srandommember key count
-    SSCAN key cursor [MATCH pattern] [COUNT count]
-</pre>
-
-<p>有序集合命令</p>
-<pre>
-    zadd key score1 member1 score2 member2
-    zcard key
-    zcount key min max
-    zrange key start stop 
-    zremrangebylex key min max
-</pre>
-
-<p>Redis HyperLogLog 是用来做基数统计的算法</p>
-<p>订阅/发布 </p>
-<pre>
-SUBSCRIBE channel [channel ...]
-UNSUBSCRIBE [channel [channel ...]]
-
-PSUBSCRIBE pattern [pattern ...]
-PUNSUBSCRIBE [pattern [pattern ...]]
-
-PUBLISH channel message
-PUBSUB subcommand [argument [argument ...]]
-</pre>
-
-<p>redis 事务</p>
-<pre>
-Redis 事务可以一次执行多个命令， 并且带有以下两个重要的保证：
-事务是一个单独的隔离操作：事务中的所有命令都会序列化、按顺序地执行。事务在执行的过程中，不会被其他客户端发送来的命令请求所打断。
-事务是一个原子操作：事务中的命令要么全部被执行，要么全部都不执行。
-一个事务从开始到执行会经历以下三个阶段：
-开始事务。
-命令入队。
-执行事务。
-
-    discard
-    exec
-    multi
-    unwatch
-    watch
-
-
-select db_number
-info
-redis-benchmark.exe -h 127.0.0.1 -p 6379 -n 10000
-Redis 在网络事件处理上采用的是非阻塞多路复用模型。
-Redis 管道技术可以在服务端未响应时，客户端可以继续向服务端发送请求，并最终一次性读取所有服务端的响应。
-$(echo -en "PING\r\n SET w3ckey redis\r\nGET w3ckey\r\nINCR visitor\r\nINCR visitor\r\nINCR visitor\r\n"; sleep 10) | nc localhost 6379
-管道技术最显著的优势是提高了 redis 服务的性能。
-分区是分割数据到多个Redis实例的处理过程，因此每个实例只保存key的一个子集
-
-</pre>
-
-
                 </div>
             </div>
         </div>

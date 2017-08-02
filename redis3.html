@@ -9,7 +9,7 @@
     <meta name="description" content="">
     <meta name="author" content="">
 
-    <title>Redis part1</title>
+    <title>redis part3</title>
 
     <!-- Bootstrap Core CSS -->
     <link href="vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
@@ -74,8 +74,8 @@
                 <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
                     <div class="post-heading">
                         <h1>Redis Learn</h1>
-                        <h2 class="subheading">Part1</h2>
-                        <span class="meta">July 2, 2017</span>
+                        <h2 class="subheading">Part3</h2>
+                        <span class="meta">July 25, 2017</span>
                     </div>
                 </div>
             </div>
@@ -87,200 +87,35 @@
         <div class="container">
             <div class="row">
                 <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
-                    <h2 class="section-heading">Redis 基础命令</h2>
-                    <p>安装：<br>
-                        下载源码包,解压,make,make install, 编译后的命令在/usr/local/bin</p>
-                    <p>集群的搭建；</p>
+                    <h2 class="section-heading">Redis 分布式锁</h2>
+                    <p>Redis 的事务中，启用的是乐观锁，只负责检测 key没有被改动，通过watch命令检测</p>
+                    <p>Redis 命令</p>
                     <pre>
-安装好redis后，修改配置文件：
-port
-daemonize
-bind
-dir   data
-pidfile
-cluster-enabled
-cluster-config-file
-cluster-node-timeout
+SETNX key value (SET if Not eXists):当且仅当 key 不存在，将 key 的值设为 value ，并返回1；若给定的 key 已经存在，则 SETNX 不做任何动作，并返回0。详见：SETNX commond
+GETSET key value:将给定 key 的值设为 value ，并返回 key 的旧值 (old value)，当 key 存在但不是字符串类型时，返回一个错误，当key不存在时，返回nil。详见：GETSET commond
+GET key:返回 key 所关联的字符串值，如果 key 不存在那么返回 nil 。详见：GET Commond
+DEL key [KEY …]:删除给定的一个或多个 key ,不存在的 key 会被忽略,返回实际删除的key的个数（integer）。详见：DEL Commond
+HSET key field value：给一个key 设置一个{field=value}的组合值，如果key没有就直接赋值并返回1，如果field已有，那么就更新value的值，并返回0.详见：HSET Commond
+HEXISTS key field:当key 中存储着field的时候返回1，如果key或者field至少有一个不存在返回0。详见HEXISTS Commond
+HINCRBY key field increment:将存储在 key 中的哈希（Hash）对象中的指定字段 field 的值加上增量 increment。如果键 key 不存在，一个保存了哈希对象的新建将被创建。如果字段 field 不存在，在进行当前操作前，其将被创建，且对应的值被置为 0。返回值是增量之后的值。详见：HINCRBY Commond
+PEXPIRE key milliseconds：设置存活时间，单位是毫秒。expire操作单位是秒。详见:PEXPIRE Commond
+PUBLISH channel message:向channel post一个message内容的消息，返回接收消息的客户端数。详见PUBLISH Commond
                     </pre>
-                    <p>分别启动后，集群并没有启动，因为slot还没有初始化</p>
-                    <pre>
-安装ruby rubygems redis
-启动集群：
-    /usr/local/redis-cluster/bin/redis-trib.rb create --replicas 1 192.168.119.131:9001 \
-    192.168.119.131:9002 \
-    192.168.119.131:9003 \
-    192.168.119.131:9004 \
-    192.168.119.131:9005 \
-    192.168.119.131:9006
-                    </pre>
-                    <p>启动服务，连接服务</p>
-                    <pre>
-redis-server redis-conf
-
-redis-cli -h 127.0.0.1 -p 6379
-
-set mykey abc  创建
-DEL mykey   删除
-get mykey   获取
-
-CONFIG GET * 获取配置信息
-CONFIG SET loglevel "notice"
-Redis支持五种数据类型：string（字符串），hash（哈希），list（列表），set（集合）及zset(sorted set：有序集合)
-一个键最大能存储512MB。
-
-                    </pre>
-
-                <pre>
-哈希
- HMSET user:1 username ziqiangxuetang.com password ziqiangxuetang.com points 200
-
-列表
-lpush ziqiangxuetang.com redis
-lrange ziqiangxuetang.com 0 10
-
-集合 Redis的Set是string类型的无序集合。 集合是通过哈希表实现的，所以添加，删除，查找的复杂度都是O(1)。
-sadd key member
-smembers key
-
-有序集合 zset
-Redis zset 和 set 一样也是string类型元素的集合,且不允许重复的成员。
-不同的是每个元素都会关联一个double类型的分数。redis正是通过分数来为集合中的成员进行从小到大的排序。
-zset的成员是唯一的,但分数(score)却可以重复。
-zadd ziqiangxuetang.com 0 rabitmq
-ZRANGEBYSCORE ziqiangxuetang.com 0 1000
-
-none (key不存在)
-string (字符串)
-list (列表)
-set (集合)
-zset (有序集)
-hash (哈希表)
-                </pre>
-
-<p>key命令</p>
+<p>Redis 实现分布式锁</p>
 <pre>
-    del
-    dump
-    exists
-    expire
-    expireat 
-    pexpire
-    pexpireat
-    keys *
-    move key db
-    persist key 
-    pttl key
-    ttl key
-    randomkey
-    renamenx key new key
-    type key
+假设我们现在要给itemId 1234 和下单操作 OP_ORDER 加锁，key是OP_ORDER_1234,结合上面的redis命令，似乎加锁的时候只要一个SETNX OP_ORDER_1234 currentTimestamp ，如果返回1代表加锁成功，返回0 表示锁被占用着。然后再用DEL OP_ORDER_1234解锁，返回1表示解锁成功，0表示已经被解锁过。然而却还存在着很多问题：SETNX会存在锁竞争，如果在执行过程中客户端宕机，也会引起死锁问题，即锁资源无法释放。并且当一个资源解锁的时候，释放锁之后，其他之前等待的锁没有办法再次自动重试申请锁（除非重新申请锁）。解决死锁的问题其实可以可以向Mysql的死锁检测学习，设置一个失效时间，通过key的时间戳来判断是否需要强制解锁。但是强制解锁也存在问题，一个就是时间差问题，不同的机器的本地时间可能也存在时间差，在很小事务粒度的高并发场景下还是会存在问题，比如删除锁的时候，在判断时间戳已经超过时效，有可能删除了其他已经获取锁的客户端的锁。另外，如果设置了一个超时时间，但是确实执行时间超过了超时时间，那么锁会被自动释放，原来持锁的客户端再次解锁的时候会出现问题，而且最为严重的还是一致性没有得到保障。
 </pre>
-
-<p>字符串命令</p>
+<p>所以设计的时候需要考虑以下几点：</p>
 <pre>
-    getrange key start end
-    getset key value
-    mget 
-    mset
-    strlen key
+锁的时效设置。避免单点故障造成死锁，影响其他客户端获取锁。但是也要保证一旦一个客户端持锁，在客户端可用时不会被其他客户端解锁。（网上很多解决方案都是其他客户端等待队列长度判断是否强制解锁，但其实在偶发情况下就不能保证一致性，也就失去了分布式锁的意义）。
+持锁期间的check,尽量在关键节点检查锁的状态，所以要设计成可重入锁，但在客户端使用时要做好吞吐量的权衡。
+减少获取锁的操作，尽量减少redis压力。所以需要让客户端的申请锁有一个等待时间，而不是所有申请锁的请求要循环申请锁。
+加锁的事务或者操作尽量粒度小，减少其他客户端申请锁的等待时间，提高处理效率和并发性。
+持锁的客户端解锁后，要能通知到其他等待锁的节点，否则其他节点只能一直等待一个预计的时间再触发申请锁。类似线程的notifyAll,要能同步锁状态给其他客户端，并且是分布式消息。
+考虑任何执行句柄中可能出现的异常，状态的正确流转和处理。比如，不能因为一个节点解锁失败，或者锁查询失败（redis 超时或者其他运行时异常），影响整个等待的任务队列，或者任务池。
 </pre>
-
-<p>hash 命令</p>
-<pre>
-    hdel key field1 field2
-    hexists key field
-    hget key field
-    hgetall key
-    hkeys key
-    hlen key
-    hmget key field1 field2
-    hmset key field1 value1 field2 value2
-    hvals key
-    HSCAN key cursor [MATCH pattern] [COUNT count]   
-
-</pre>
-
-<p>list命令</p>
-<pre>
-    blpop key1 key2 timeout
-    brpop key1 key2 timeout
-    brpoplpush source dest timeout
-    lindex key index
-    linsert key defore|after pivot value
-    llen key
-    lpush key value
-    lpop key
-    lrange key start stop
-    lrem key count value
-    lset key index value
-    rpop key
-    rpush key value1 value2
-</pre>
-
-<p>集合命令</p>
-<pre>
-    sadd key member1 member2
-    scard key
-    sinter key1 key2 交集
-    sunion key1 key2 并集
-    sdiff key1 key2  差集
-    sysmember key member
-    smembers key
-    spop key
-    srandommember key count
-    SSCAN key cursor [MATCH pattern] [COUNT count]
-</pre>
-
-<p>有序集合命令</p>
-<pre>
-    zadd key score1 member1 score2 member2
-    zcard key
-    zcount key min max
-    zrange key start stop 
-    zremrangebylex key min max
-</pre>
-
-<p>Redis HyperLogLog 是用来做基数统计的算法</p>
-<p>订阅/发布 </p>
-<pre>
-SUBSCRIBE channel [channel ...]
-UNSUBSCRIBE [channel [channel ...]]
-
-PSUBSCRIBE pattern [pattern ...]
-PUNSUBSCRIBE [pattern [pattern ...]]
-
-PUBLISH channel message
-PUBSUB subcommand [argument [argument ...]]
-</pre>
-
-<p>redis 事务</p>
-<pre>
-Redis 事务可以一次执行多个命令， 并且带有以下两个重要的保证：
-事务是一个单独的隔离操作：事务中的所有命令都会序列化、按顺序地执行。事务在执行的过程中，不会被其他客户端发送来的命令请求所打断。
-事务是一个原子操作：事务中的命令要么全部被执行，要么全部都不执行。
-一个事务从开始到执行会经历以下三个阶段：
-开始事务。
-命令入队。
-执行事务。
-
-    discard
-    exec
-    multi
-    unwatch
-    watch
-
-
-select db_number
-info
-redis-benchmark.exe -h 127.0.0.1 -p 6379 -n 10000
-Redis 在网络事件处理上采用的是非阻塞多路复用模型。
-Redis 管道技术可以在服务端未响应时，客户端可以继续向服务端发送请求，并最终一次性读取所有服务端的响应。
-$(echo -en "PING\r\n SET w3ckey redis\r\nGET w3ckey\r\nINCR visitor\r\nINCR visitor\r\nINCR visitor\r\n"; sleep 10) | nc localhost 6379
-管道技术最显著的优势是提高了 redis 服务的性能。
-分区是分割数据到多个Redis实例的处理过程，因此每个实例只保存key的一个子集
-
-</pre>
-
+<p><a href="http://www.weizijun.cn/2016/03/17/%E8%81%8A%E4%B8%80%E8%81%8A%E5%88%86%E5%B8%83%E5%BC%8F%E9%94%81%E7%9A%84%E8%AE%BE%E8%AE%A1/">魏子珺的博客
+----聊一聊分布式锁的设计</a></p>
 
                 </div>
             </div>
