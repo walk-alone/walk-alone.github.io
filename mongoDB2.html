@@ -9,7 +9,7 @@
     <meta name="description" content="">
     <meta name="author" content="">
 
-    <title>Redis part2</title>
+    <title>mongoDB part2</title>
 
     <!-- Bootstrap Core CSS -->
     <link href="vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
@@ -32,7 +32,6 @@
 </head>
 
 <body>
-
 
     <!-- Navigation -->
     <nav class="navbar navbar-default navbar-custom navbar-fixed-top">
@@ -67,102 +66,145 @@
         </div>
         <!-- /.container -->
     </nav>
-
     <!-- Page Header -->
     <!-- Set your background image for this header on the line below. -->
-    <header class="intro-header" style="background-image: url('img/home-bg.jpg')">
+    <header class="intro-header" style="background-image: url('img/study.jpg')">
         <div class="container">
             <div class="row">
                 <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
-                    <div class="site-heading">
-                        <h1>My Blog</h1>
-                        <hr class="small">
-                        <span class="subheading">记录 每天 新生活</span>
+                    <div class="post-heading" style="color: black">
+                        <h1>MongoDB Learn</h1>
+                        <h2 class="subheading">Part2</h2>
+                        <span class="meta">July 28, 2017</span>
                     </div>
                 </div>
             </div>
         </div>
     </header>
 
-    <!-- Main Content -->
-    <div class="container">
-        <div class="row">
-            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
-                <div class="post-preview">
-                    <a href="redis2.html">
-                        <h2 class="post-title">
-                            Redis 学习记录 Part2
-                        </h2>
-                        <h3 class="post-subtitle">
-                            django-redis
-                        </h3>
-                    </a>
-                    <p class="post-meta">July 24, 2017</p>
-                </div>
-                <hr>
+    <!-- Post Content -->
+    <article>
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                    <h2 class="section-heading">MongoDB advanced</h2>
+<p>mongoDB关系</p>
+<pre>
+嵌入式  后期不好维护
+引用式 
+{
+   "_id":ObjectId("52ffc33cd85242f436000001"),
+   "contact": "987654321",
+   "dob": "01-01-1991",
+   "name": "Tom Benzamin",
+   "address_ids": [
+      ObjectId("52ffc4a5d85242602e000000"),
+      ObjectId("52ffc4a5d85242602e000001")
+   ]
+}
+>var result = db.users.findOne({"name":"Tom Benzamin"},{"address_ids":1})
+>var addresses = db.address.find({"_id":{"$in":result["address_ids"]}})
+</pre>
 
-                   <div class="post-preview">
-                    <a href="redis3.html">
-                        <h2 class="post-title">
-                            Redis 学习记录 Part3
-                        </h2>
-                        <h3 class="post-subtitle">
-                            Basic command && Database query
-                        </h3>
-                    </a>
-                    <p class="post-meta">July 25, 2017</p>
-                </div>
-                <hr>
-                
-                <div class="post-preview">
-                    <a href="mongoDB1.html">
-                        <h2 class="post-title">
-                            MongoDB 学习记录 Part1
-                        </h2>
-                        <h3 class="post-subtitle">
-                            Basic command
-                        </h3>
-                    </a>
-                    <p class="post-meta">July 26, 2017</p>
-                </div>
-                <hr>
+<p>DBRef</p>
+<pre>
+{
+   "_id":ObjectId("53402597d852426020000002"),
+   "address": {
+   "$ref": "address_home",
+   "$id": ObjectId("534009e4d852427820000002"),
+   "$db": "w3cschoolcc"},
+   "contact": "987654321",
+   "dob": "01-01-1991",
+   "name": "Tom Benzamin"
+}
+$ref：集合名称
+$id：引用的id
+$db:数据库名称，可选参数
 
-                <div class="post-preview">
-                    <a href="mongoDB2.html">
-                        <h2 class="post-title">
-                            MongoDB 学习记录 Part2
-                        </h2>
-                        <h3 class="post-subtitle">
-                            MongoDB advanced
-                        </h3>
-                    </a>
-                    <p class="post-meta">July 28, 2017</p>
-                </div>
-                <hr>
+>var user = db.users.findOne({"name":"Tom Benzamin"})
+>var dbRef = user.address
+>db[dbRef.$ref].findOne({"_id":(dbRef.$id)})
+</pre>
 
-                <div class="post-preview">
-                    <a href="Scrapy1.html">
-                        <h2 class="post-title">
-                            Scrapy 学习记录 Part1
-                        </h2>
-                        <h3 class="post-subtitle">
-                            Scrapy basic
-                        </h3>
-                    </a>
-                    <p class="post-meta">July 29, 2017</p>
+<p>MongoDB 覆盖索引查询</p>
+<pre>
+所有的查询字段是索引的一部分
+所有的查询返回字段在同一个索引中 
+由于所有出现在查询中的字段是索引的一部分， MongoDB 无需在整个数据文档中检索匹配查询条件和返回使用相同索引的查询结果。
+因为索引存在于RAM中，从索引中获取数据比通过扫描文档读取数据要快得多
+*****要创建复合索引
+</pre>
+
+<p>MongoDB 查询分析</p>
+<pre>
+MongoDB 查询分析可以确保我们建议的索引是否有效，是查询语句性能分析的重要工具。
+MongoDB 查询分析常用函数有：explain() 和 hint()。
+explain 操作提供了查询信息，使用索引及查询统计等。有利于我们对索引的优化。
+虽然MongoDB查询优化器一般工作的很不错，但是也可以使用 hint 来强制 MongoDB 使用一个指定的索引。
+</pre>
+<p>MongoDB 原子操作</p>
+<p>mongodb不支持事务，所以，在你的项目中应用时，要注意这点。无论什么设计，都不要要求mongodb保证数据的完整性。
+但是mongodb提供了许多原子操作，比如文档的保存，修改，删除等，都是原子操作。</p>
+<pre>
+原子操作命令：
+$set\$unset\$inc\$push\$pushall\$pull
+索引子文档字段
+>db.users.ensureIndex({"address.city":1,"address.state":1,"address.pincode":1})
+记住查询表达式必须遵循指定的索引的顺序。所以上面创建的索引将支持以下查询：
+由于索引是存储在内存(RAM)中,你应该确保该索引的大小不超过内存的限制。
+如果索引的大小大于内存的限制，MongoDB会删除一些索引，这将导致性能下降。
+集合中索引不能超过64个
+索引名的长度不能超过128个字符
+一个复合索引最多可以有31个字段
+</pre>
+<p>MongoDB ObjectId</p>
+<pre>
+    
+ObjectId 是一个12字节 BSON 类型数据，有以下格式：
+前4个字节表示时间戳
+接下来的3个字节是机器标识码
+紧接的两个字节由进程id组成（PID）
+最后三个字节是随机数。
+</pre>
+<p>MongoDB Map Reduce</p>
+<pre>
+>db.posts.mapReduce( 
+   function() { emit(this.user_name,1); }, 
+   function(key, values) {return Array.sum(values)}, 
+      {  
+         query:{status:"active"},  
+         out:"post_total" 
+      }
+).find()
+</pre>
+
+<p>pymongo</p>
+<pre>
+    
+#coding:utf-8
+import pymongo
+conn = pymongo.MongoClient(host='localhost',port=27017,)
+print conn.database_names()
+db = conn.get_database('newdb')
+print db.collection_names()
+db_col = db.get_collection('user')
+print db_col.find_one().keys()
+print db_col.find().sort('name',pymongo.DESCENDING)
+print db_col.find().count()
+db_col.insert({'name':'mike','active_time':'20170728'})
+db_col.update({'name':'mike'},{'$set':{'active_time':'20170713'}})
+db_col.remove({'name':'mike'})
+</pre>
+
+
                 </div>
-                <hr>
-                <!-- Pager -->
-                <ul class="pager">
-                    <li class="next">
-                        <a href="page2.html">next page &rarr;</a>
-                    </li>
-                </ul>
             </div>
         </div>
-    </div>
+    </article>
 
     <hr>
+
     <!-- Footer -->
     <footer>
         <div class="container">
