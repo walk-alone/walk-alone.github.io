@@ -236,6 +236,9 @@
                                 },
                             },
                         ]
+
+                    </pre>
+
 <pre>
 #coding:utf-8
 #nav_process.py
@@ -246,9 +249,6 @@ nav_display_columns = Column.objects.filter(nav_display=True)
 def nav_column(request):
     return {'nav_display_columns':nav_display_columns}
 </pre>
-
-
-                    </pre>
                                     
                     <h2 class="section-heading">Django 中间件</h2>
                     <a href="#">
