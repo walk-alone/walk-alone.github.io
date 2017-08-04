@@ -117,6 +117,112 @@ PUBLISH channel message:向channel post一个message内容的消息，返回接�
 <p><a href="http://www.weizijun.cn/2016/03/17/%E8%81%8A%E4%B8%80%E8%81%8A%E5%88%86%E5%B8%83%E5%BC%8F%E9%94%81%E7%9A%84%E8%AE%BE%E8%AE%A1/">魏子珺的博客
 ----聊一聊分布式锁的设计</a></p>
 
+<hr>
+<hr>
+<h3>scrapy-redis分布式</h3>
+<p>分布式爬虫的关键是共享一个requests队列,队列选用Redis队列进行存储，Redis是一种高效的非关系型数据库，以key-value的形式存储，结构灵活，它是内存中的数据结构存储系统，处理速度快，性能好，同时，提供了队列，集合等多种存储结构，方便队列维护。</p>
+
+<p>另外一个问题，去重,如何避免多台主机访问的request都不同，那么就需要用到Redis提供的队列结构。Redis提供集合数据结构，在Redis集合中存储每个Request的指纹，在向Request队列中加入Request时首先验证指纹是否存在。如果存在，则不加入，如果不存在，则加入。
+</p>
+
+<pre>
+多台主机协作的关键：共享爬虫队列
+
+主机:维护爬取队列
+从机：负责数据抓取，数据处理，数据存储
+
+队列如何维护：Redis队列
+Redis 非关系型数据库，key-value形式存储，结构灵活。是内存中的数据结构存储系统，处理速度快，性能好
+提供队列，集合等多种存储结构，方便队列维护
+
+怎么去重
+Redis集合：Redis提供集合数据结构，在Redis集合中存储每个Request的指纹，在向Request队列中加入Request前首先
+验证这个Request的指纹是否已经加入集合中，如果已存在，则不添加到Request队列，如果不存在，则将Request添加到队列
+并将指纹添加到集合
+
+怎么防止中断：
+启动判断，在每台从机Scrapy启动时首先判断当前的Redis Request队列
+是否为空，如果不为空，则从队列中取得下一个Request进行爬取。
+如果为空，则重新开始爬取，第一台从机执行爬取向队列中添加Request
+
+如何实现这样的架构
+库：scrapy-redis：实现了维护爬取队列、去重、中断、redis接口
+改写了Scrapy的调度器、队列等组件，利用它可以实现分布式架构
+
+</pre>
+<p>scrapy-redis所实现的两种分布式：爬虫分布式以及item处理分布式。分别是由模块scheduler和模块pipelines实现。</p>
+<pre>
+connection.py
+负责根据setting中配置实例化redis连接。被dupefilter和scheduler调用，总之涉及到redis存取的都要使用到这个模块。
+要想连接到redis数据库,需要一个ip地址、端口号、用户名密码（可选）和一个整形的数据库编号，同时我们还可以在scrapy工程的setting文件中配置套接字的超时时间、等待时间等
+
+dupefilter.py
+负责执行requst的去重，实现的很有技巧性，使用redis的set数据结构。但是注意scheduler并不使用其中用于在这个模块中实现的dupefilter键做request的调度，而是使用queue.py模块中实现的queue。当request不重复时，将其存入到queue中，调度时将其弹出。
+
+queue.py
+三种方式的queue：FIFO的SpiderQueue，SpiderPriorityQueue，以及LIFI的SpiderStack。
+
+
+picklecompat.py
+这里实现了loads和dumps两个函数，其实就是实现了一个serializer，因为redis数据库不能存储复杂对象（value部分只能是字符串，字符串列表，字符串集合和hash，key部分只能是字符串），所以我们存啥都要先串行化成文本才行
+
+
+scheduler.py
+此扩展是对scrapy中自带的scheduler的替代（在settings的SCHEDULER变量中指出），正是利用此扩展实现crawler的分布式调度。其利用的数据结构来自于queue中实现的数据结构。
+
+scheduler负责调度各个spider的request请求，scheduler初始化时，通过settings文件读取queue和dupefilters的类型（一般就用上边默认的），配置queue和dupefilters使用的key（一般就是spider name加上queue或者dupefilters，这样对于同一种spider的不同实例，就会使用相同的数据块了）。每当一个request要被调度时，enqueue_request被调用，scheduler使用dupefilters来判断这个url是否重复，如果不重复，就添加到queue的容器中（先进先出，先进后出和优先级都可以，可以在settings中配置）。当调度完成时，next_request被调用，scheduler就通过queue容器的接口，取出一个request，把他发送给相应的spider，让spider进行爬取工作。
+
+
+</pre>
+<pre>
+settings.py中设置：
+    SCHEDULER=xxxxx
+    DUPEFILTER_CLASS=xxxxx
+    REDIS_HOST=xxxxx
+    REDIS_PORT=6379
+
+</pre>
+<hr>
+<hr>
+
+<p>scrapy中选择器的用法</p>
+<pre>
+Using selectors
+
+可用的方式:xpath,css
+response.xpath
+response.css
+返回selector组成的列表，调用extract或者extract_first()提取出内容
+
+可以对selector再次调用xpath或者css进行迭代查找
+
+extract_first(default='') 如果拿不到的话将用default属性替代，此处为空置
+
+属性名称包含img的超链接
+response.xpath('//a[contains(@href,"image")]/@href').extract()
+response.css('a[href*=image]::attr(href)')
+
+正则表达式匹配
+response.css('selector').re(pattern)
+response.css('selector').re_pattern(pattern)
+</pre>
+<pre>
+每个pipeline必须实现下面的方法：
+process_item(self,item,spider)
+return item 或者 raise DropItem()
+
+可选方法：
+open_spider(self,spider)
+close_spider(self,spider)
+</pre>
+<pre>
+log:scrapy.log.log()
+
+logger:输出日志信息
+        self.logger.info(msg)
+</pre>
+
+
                 </div>
             </div>
         </div>
