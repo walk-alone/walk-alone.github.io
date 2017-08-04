@@ -9,7 +9,7 @@
     <meta name="description" content="">
     <meta name="author" content="">
 
-    <title>My Blog</title>
+    <title>设计模式</title>
 
     <!-- Bootstrap Core CSS -->
     <link href="vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
@@ -66,18 +66,16 @@
         </div>
         <!-- /.container -->
     </nav>
-
     <!-- Page Header -->
     <!-- Set your background image for this header on the line below. -->
-    <header class="intro-header" style="background-image: url('img/beauty.jpg')">
+    <header class="intro-header" style="background-image: url('img/sergio-1.jpg')">
         <div class="container">
             <div class="row">
                 <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
-                    <div class="post-heading">
-                    <h1 style="color: #226778">一沙一世界      一花一天堂</h1>
-                    <h1 style="color: #226778">双手握无限      刹那是永恒</h1>
-                    <h2 class="subheading" style="text-align: right;color: #226778">——威廉·布莱克《天真的预言》</h2>
-                        <span class="meta"><a href="#">每个简单的生命都别出心裁</span>
+                    <div class="post-heading" style="color: black">
+                        <h1>设计模式</h1>
+                        <h2 class="subheading">Model-Design</h2>
+                        <span class="meta">July 14, 2017</span>
                     </div>
                 </div>
             </div>
@@ -85,50 +83,49 @@
     </header>
 
     <!-- Post Content -->
- <div class="container">
-     <div class="row">
-         <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
-             <div class="post-preview">
-                 <a href="python1.html">
-                    <h2 class="post-title">
-                        Python Study part1
-                    </h2>
-                    <h3 class="post-subtitle">
-                          basic skills
-                        </h3>
-                    
-                 </a>
-             </div>
-             <hr>
-            
-            <div class="post-preview">
-                 <a href="python2.html">
-                    <h2 class="post-title">
-                        Python Study part2
-                    </h2>
-                    <h3 class="post-subtitle">
-                        python advance
-                        </h3>
-                    
-                 </a>
-             </div>
-             <hr>
-            
-             <div class="post-preview">
-                 <a href="python3.html">
-                    <h2 class="post-title">
-                        Python Study part3
-                    </h2>
-                    <h3 class="post-subtitle">
-                           python summary
-                        </h3>
-                    
-                 </a>
-             </div>
-             <hr>
-         </div>
-     </div>
- </div>
+    <article>
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                    <h2 class="section-heading">常见设计模式</h2>
+                    <pre>
+<h4>创建型模式</h4>
+简单工厂模式（Simple Factory）简易计算器ok
+工厂方法模式（Factory Method）雷锋工厂 ok
+抽象工厂模式（Abstract Factory） 供一个创建一系列相关或相互依赖对象的接口，而无需指定它们的类 @@
+建造者模式（Builder）  “画”出一个四肢健全（头身手腿）的小人
+原型模式（Prototype）  return this  ok
+单例模式（Singleton）
+
+<h4>结构型模式</h4>
+适配器模式(Adapter)  将一个类的接口转换成为客户希望的另外一个接口
+桥接模式(Bridge)
+组合模式(Composite)
+装饰模式(Decorator)   一个人穿衣服(可多件)
+外观模式(Facade)  接口将几种调用分别组合成为两组，用户通过接口调用其中的一组
+享元模式(Flyweight)
+代理模式(Proxy)
+
+<h4>行为型模式</h4>
+职责链模式(Chain of Responsibility)
+命令模式(Command)
+解释器模式(Interpreter)
+迭代器模式(Iterator)
+中介者模式(Mediator)
+备忘录模式(Memento)
+观察者模式(Observer)  让多个观察对象同时监听一个主题对象，当主题对象状态发生变化时会通知所有观察者。
+状态模式(State)       当一个对象的内在状态改变时允许改变其行为，这个对象看起来像是改变了其类
+策略模式(Strategy)    超市售卖策略ok
+模板方法模式(Template Method) 考试时使用同一种考卷（父类），不同学生上交自己填写的试卷（子类方法的实现）
+访问者模式(Visitor)
+
+
+                    </pre>
+                </div>
+            </div>
+        </div>
+    </article>
+
     <hr>
 
     <!-- Footer -->
